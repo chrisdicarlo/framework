@@ -13,7 +13,7 @@ class ForgetFailedCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'queue:forget {id : The ID of the failed job}';
+    protected $signature = 'queue:forget {id?* : The ID of the failed job}';
 
     /**
      * The name of the console command.
@@ -40,10 +40,26 @@ class ForgetFailedCommand extends Command
      */
     public function handle()
     {
-        if ($this->laravel['queue.failer']->forget($this->argument('id'))) {
-            $this->components->info('Failed job deleted successfully.');
-        } else {
-            $this->components->error('No failed job matches the given ID.');
+        $ids = $this->getJobIds();
+
+        foreach ($ids as $id) {
+            if ($this->laravel['queue.failer']->forget($id)) {
+                $this->components->info("Failed job {$$id} deleted successfully.");
+            } else {
+                $this->components->error("No failed job matches ID {$$id}.");
+            }
         }
+    }
+
+    /**
+     * Get the job IDs to be forgotten.
+     *
+     * @return array
+     */
+    protected function getJobIds()
+    {
+        $ids = (array) $this->argument('id');
+
+        return array_values(array_filter(array_unique($ids)));
     }
 }
